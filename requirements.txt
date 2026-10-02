@@ -1,6 +1,4 @@
 azure-storage-blob
-azure-identity
-openai
 python-dotenv
-pypdf
-chromadb
+sqlalchemy
+psycopg2-binary
