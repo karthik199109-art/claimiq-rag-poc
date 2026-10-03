@@ -12,49 +12,63 @@ from app.services.chunking_service import (
     chunk_document,
 )
 
+from app.services.embedding_service import (
+    generate_embeddings,
+)
+
 
 def main():
 
     # --------------------------------------------------
-    # 1. Create database tables if they don't exist
+    # 1. Create database tables
     # --------------------------------------------------
 
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(
+        bind=engine
+    )
 
     # --------------------------------------------------
-    # 2. Existing metadata ingestion
-    #    Azure Blob → PostgreSQL
+    # 2. Discover documents
     # --------------------------------------------------
 
     documents = ingest_document_metadata()
 
-    print(f"Documents processed: {len(documents)}")
+    print(
+        f"\nDocuments processed: "
+        f"{len(documents)}"
+    )
 
     # --------------------------------------------------
-    # 3. Read and chunk each document
+    # 3. Process each document
     # --------------------------------------------------
 
     for document in documents:
 
+        print("\n" + "=" * 80)
+
         print(
-            f"\nProcessing: {document['document_name']}"
+            f"Processing: "
+            f"{document['document_name']}"
         )
 
-        # ----------------------------------------------
-        # Read PDF from Azure Blob
-        # ----------------------------------------------
+        print("=" * 80)
+
+        # --------------------------------------------------
+        # Read PDF
+        # --------------------------------------------------
 
         pages = read_document(
             document["blob_path"]
         )
 
         print(
-            f"Pages extracted: {len(pages)}"
+            f"Pages extracted: "
+            f"{len(pages)}"
         )
 
-        # ----------------------------------------------
-        # Create chunks
-        # ----------------------------------------------
+        # --------------------------------------------------
+        # Chunk PDF
+        # --------------------------------------------------
 
         chunks = chunk_document(
             pages=pages,
@@ -62,37 +76,62 @@ def main():
         )
 
         print(
-            f"Chunks created: {len(chunks)}"
+            f"Chunks created: "
+            f"{len(chunks)}"
         )
 
-        # ----------------------------------------------
-        # Temporary validation
-        # Print first 3 chunks only
-        # ----------------------------------------------
+        # --------------------------------------------------
+        # Generate embeddings
+        # --------------------------------------------------
 
-        for chunk in chunks[:3]:
+        chunks = generate_embeddings(
+            chunks
+        )
 
-            print("\n" + "=" * 80)
+        print(
+            f"Embeddings created: "
+            f"{len(chunks)}"
+        )
+
+        # --------------------------------------------------
+        # Verify first chunk
+        # --------------------------------------------------
+
+        if chunks:
+
+            first_chunk = chunks[0]
+
+            print("\nFirst chunk verification:")
 
             print(
-                f"Document : {chunk['document_name']}"
+                f"Document: "
+                f"{first_chunk['document_name']}"
             )
 
             print(
-                f"Page     : {chunk['page_number']}"
+                f"Page: "
+                f"{first_chunk['page_number']}"
             )
 
             print(
-                f"Chunk    : {chunk['chunk_number']}"
+                f"Chunk: "
+                f"{first_chunk['chunk_number']}"
             )
 
             print(
-                f"Size     : {len(chunk['text'])} characters"
+                f"Text size: "
+                f"{len(first_chunk['text'])} characters"
             )
 
-            print("=" * 80)
+            print(
+                f"Embedding dimensions: "
+                f"{len(first_chunk['embedding'])}"
+            )
 
-            print(chunk["text"])
+            print(
+                f"First 5 embedding values: "
+                f"{first_chunk['embedding'][:5]}"
+            )
 
 
 if __name__ == "__main__":
