@@ -23,6 +23,9 @@ def ingest_document_metadata():
         AZURE_STORAGE_CONTAINER
     )
 
+    # Store all successfully inserted documents
+    inserted_documents = []
+
     for blob in container_client.list_blobs():
 
         blob_name = blob.name
@@ -31,7 +34,7 @@ def ingest_document_metadata():
         if not blob_name.lower().endswith(".pdf"):
             continue
 
-        # Folder/category
+        # Get folder/category from blob path
         path_parts = blob_name.split("/")
 
         if len(path_parts) > 1:
@@ -39,13 +42,16 @@ def ingest_document_metadata():
         else:
             category = "unknown"
 
+        # Get only the file name
         document_name = os.path.basename(blob_name)
 
+        # Generate unique document ID
         document_id = str(uuid.uuid4())
-       
 
+        # Current UTC timestamp
         now = datetime.now(timezone.utc)
 
+        # Document metadata
         document_data = {
             "document_id": document_id,
             "document_name": document_name,
@@ -60,10 +66,17 @@ def ingest_document_metadata():
             "deactivated_at": None,
         }
 
+        # Insert metadata into PostgreSQL
         insert_document(document_data)
+
+        # Keep the inserted document metadata
+        # so the next stage can read and process it
+        inserted_documents.append(document_data)
 
         print(
             f"Inserted: {document_name} "
             f"| Category: {category} "
             f"| Blob path: {blob_name}"
         )
+
+    return inserted_documents

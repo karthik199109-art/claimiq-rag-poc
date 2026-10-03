@@ -1,4 +1,6 @@
 import os
+from urllib.parse import quote_plus
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,8 +21,10 @@ POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
 
+encoded_password = quote_plus(POSTGRES_PASSWORD)
+
 DATABASE_URL = (
     f"postgresql+psycopg2://"
-    f"{POSTGRES_USER}:{POSTGRES_PASSWORD}"
+    f"{POSTGRES_USER}:{encoded_password}"
     f"@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 )
